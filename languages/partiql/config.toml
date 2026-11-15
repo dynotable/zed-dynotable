@@ -1,0 +1,4 @@
+name = "PartiQL"
+grammar = "sql"
+path_suffixes = ["partiql"]
+line_comments = ["-- "]

@@ -1,0 +1,4 @@
+name = "DynoTable SQL"
+grammar = "sql"
+path_suffixes = ["dtsql", "dynotable.sql"]
+line_comments = ["-- "]
