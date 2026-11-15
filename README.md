@@ -23,7 +23,7 @@ The extension does not attach to plain `.sql` files.
 - `dynotable-lsp` on your `PATH`, or nothing: when `dynotable-lsp` is not on your `PATH`, the
   extension installs the latest `dynotable-cli` from npm.
 
-When DynoTable is not running, the first start of the language server starts DynoTable with no
+When DynoTable is not running, a start of the language server starts DynoTable with no
 window.
 
 ## Pick a profile
