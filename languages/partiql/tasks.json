@@ -1,0 +1,13 @@
+[
+  {
+    "label": "DynoTable: Run statement",
+    "command": "PATH=$PATH:$HOME/Library/Application\\ Support/Zed/extensions/work/dynotable/node_modules/.bin:$HOME/.local/share/zed/extensions/work/dynotable/node_modules/.bin; if ! command -v dynotable-lsp >/dev/null 2>&1; then echo Run needs dynotable-cli 0.1.2 or later: npm install -g dynotable-cli; exit 127; fi; case $(dynotable-lsp --version) in 0.0.*|0.1.0|0.1.1) echo Run needs dynotable-cli 0.1.2 or later: npm install -g dynotable-cli; exit 1;; esac; exec dynotable-lsp run --zed",
+    "cwd": "$ZED_WORKTREE_ROOT",
+    "tags": ["dynotable-run"],
+    "save": "current",
+    "shell": {
+      "program": "sh"
+    },
+    "show_command": false
+  }
+]
