@@ -20,8 +20,10 @@ Click the ▶ in the gutter next to a statement. Zed saves the file, runs the st
 rows as a table in the terminal panel, with a summary line under the table.
 
 Run uses `dynotable-lsp` from your `PATH`. When it is not on your `PATH`, Run uses the copy that the
-extension installed from npm, in Zed's default data folder on macOS and Linux. So you do not have
-to install anything more.
+extension installed from npm, in Zed's default data folder on macOS and Linux. That copy needs
+Node.js: Run uses Node.js from your `PATH`, else the Node.js that Zed downloaded. So you do not
+have to install anything more. When Run cannot start `dynotable-lsp`, it tells you to install
+Node.js or `dynotable-cli`.
 
 Some statements get no ▶, for example statements after a PartiQL `INSERT` that Zed's SQL grammar
 does not parse. Put the cursor in the statement and run "task: spawn", then pick "DynoTable: Run
@@ -39,7 +41,9 @@ statement". To give the task a key, run "zed: open keymap file" and add:
 Use a key that is free in your keymap.
 
 A file with a syntax error has no runnable statements. A PartiQL write does not run from the editor:
-make writes in DynoTable.
+make writes in DynoTable. On a row where one statement is inside another, Zed can show two ▶.
+
+Open your project folder in Zed, not a single file: Run starts in the project root.
 
 Run uses the profile of `.dynotable.json` in the root of your project, else your only profile. It
 does not read `initialization_options` from your Zed settings. See
@@ -93,6 +97,18 @@ back:
 
 1. Start DynoTable.
 2. Run "editor: restart language server".
+
+## Development
+
+```sh
+rustup target add wasm32-wasip2
+cargo test
+cargo build --release --target wasm32-wasip2
+tests/run-task.sh
+```
+
+`tests/run-task.sh` checks the Run task and needs `jq`. After you add or change a file in
+`languages/`, run "zed: install dev extension" again.
 
 ## License
 

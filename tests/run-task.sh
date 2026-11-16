@@ -60,6 +60,13 @@ else
   pass "gate refuses a command holding \${ZED_FILE}"
 fi
 
+# sh, not the user's shell (fish has another syntax); the edits that the user sees; .dynotable.json of the project.
+if jq -e '.[0].shell.program == "sh" and .[0].save == "current" and .[0].cwd == "$ZED_WORKTREE_ROOT"' "$sql_tasks" >/dev/null; then
+  pass "the task runs under sh, saves the file and runs in the worktree root"
+else
+  fail "the task must have shell.program sh, save current and cwd \$ZED_WORKTREE_ROOT"
+fi
+
 task_tags=$(jq -c '.[0].tags' "$sql_tasks")
 for lang in dynotable-sql partiql; do
   tag=$(sed -n 's/.*(#set! tag \([^)]*\)).*/\1/p' "$root/languages/$lang/runnables.scm")
@@ -71,25 +78,39 @@ for lang in dynotable-sql partiql; do
 done
 
 command=$(jq -r '.[0].command' "$sql_tasks")
-sh_dir=$(dirname "$(command -v sh)")
+# The system folders can hold node. The task must not need it, so the cases get sh and nothing else.
+sh_dir="$tmp/sys"
+mkdir -p "$sh_dir"
+ln -s "$(command -v sh)" "$sh_dir/sh"
 mac_bin='Library/Application Support/Zed/extensions/work/dynotable/node_modules/.bin'
 linux_bin='.local/share/zed/extensions/work/dynotable/node_modules/.bin'
 
-# fake <dir> <version> <marker>: a dynotable-lsp that prints its version, else the marker and args.
+# fake <dir> <version> <marker> [<shebang>]: a dynotable-lsp that prints its version, else the
+# marker and args. An empty version prints nothing and exits 1, as a broken install does.
 fake() {
   mkdir -p "$1"
   cat >"$1/dynotable-lsp" <<EOF
-#!/bin/sh
-if [ "\$1" = --version ]; then echo $2; exit 0; fi
+${4:-#!/bin/sh}
+if [ "\$1" = --version ]; then [ -n "$2" ] || exit 1; echo $2; exit 0; fi
 echo $3 "\$@"
 EOF
   chmod +x "$1/dynotable-lsp"
 }
 
-# check <name> <home> <path> <expected stdout> <expected exit>
+# The npm copy is a Node.js script.
+node_shebang='#!/usr/bin/env node'
+
+# fake_node <dir>: a node that runs the script it gets with sh.
+fake_node() {
+  mkdir -p "$1"
+  printf '#!/bin/sh\nexec sh "$@"\n' >"$1/node"
+  chmod +x "$1/node"
+}
+
+# check <name> <home> <path> <expected stdout> <expected exit> [<stderr target>]
 check() {
   local out status
-  out=$(HOME="$2" PATH="$3" sh -c "$command" 2>&1)
+  out=$(HOME="$2" PATH="$3" sh -c "$command" 2>"${6:-/dev/stdout}")
   status=$?
   if [ "$out" = "$4" ] && [ "$status" = "$5" ]; then
     pass "$1"
@@ -107,7 +128,7 @@ d=$(case_dir a)
 fake "$d/bin" 0.1.2 path-copy
 check "(a) a 0.1.2 CLI on PATH runs run --zed" "$d/home" "$d/bin:$sh_dir" "path-copy run --zed" 0
 
-for version in 0.1.1 0.0.0-dev; do
+for version in 0.1.0 0.1.1 0.0.0-dev; do
   d=$(case_dir "b-$version")
   fake "$d/bin" "$version" path-copy
   check "(b) a $version CLI gets the upgrade hint" "$d/home" "$d/bin:$sh_dir" "$hint" 1
@@ -128,6 +149,31 @@ d=$(case_dir e)
 fake "$d/bin" 0.1.2 path-copy
 fake "$d/home/$mac_bin" 0.1.1 npm-copy
 check "(e) the PATH CLI wins over an older npm copy" "$d/home" "$d/bin:$sh_dir" "path-copy run --zed" 0
+
+version_hint='Run could not get the version of dynotable-lsp. Install Node.js 18 or later, or run: npm install -g dynotable-cli'
+
+d=$(case_dir f)
+fake "$d/bin" "" path-copy
+check "(f) a CLI that prints no version gets the version hint" "$d/home" "$d/bin:$sh_dir" "$version_hint" 1
+
+if PATH="$sh_dir" command -v node >/dev/null 2>&1; then
+  fail "the test PATH holds node"
+fi
+
+# The stderr of env differs between macOS and Linux, so these cases compare stdout only.
+d=$(case_dir g)
+fake "$d/home/$mac_bin" 0.1.2 npm-copy "$node_shebang"
+check "(g) the npm copy with no node gets the version hint" "$d/home" "$d/bin:$sh_dir" "$version_hint" 1 /dev/null
+
+d=$(case_dir h)
+fake "$d/home/$mac_bin" 0.1.2 npm-copy "$node_shebang"
+fake_node "$d/home/Library/Application Support/Zed/node/node-v22.5.1-darwin-arm64/bin"
+check "(h) the npm copy runs with the node of Zed on macOS" "$d/home" "$d/bin:$sh_dir" "npm-copy run --zed" 0 /dev/null
+
+d=$(case_dir i)
+fake "$d/home/$linux_bin" 0.1.2 npm-copy "$node_shebang"
+fake_node "$d/home/.local/share/zed/node/node-v22.5.1-linux-x64/bin"
+check "(i) the npm copy runs with the node of Zed on Linux" "$d/home" "$d/bin:$sh_dir" "npm-copy run --zed" 0 /dev/null
 
 if [ "$failures" -gt 0 ]; then
   echo "$failures check(s) failed"
