@@ -69,8 +69,8 @@ On Windows, the ▶ does not work, because the task needs `sh`. Install the CLI 
 
 ## Requirements
 
-- macOS on Apple silicon, Linux x64 or Windows x64. `dynotable-lsp` has no binary for other
-  platforms yet.
+- macOS (Apple silicon or Intel), Linux x64 or Windows x64. `dynotable-lsp` has no binary for
+  other platforms yet. Intel Macs need `dynotable-cli` 0.1.2 or later.
 - DynoTable 1.20.0 or later, with the Editor integration switched on.
 - `dynotable-lsp` on your `PATH`, or nothing: when `dynotable-lsp` is not on your `PATH`, the
   extension installs the latest `dynotable-cli` from npm.
