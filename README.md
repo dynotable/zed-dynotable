@@ -5,7 +5,10 @@ gives the language features for your DynoTable SQL and PartiQL files.
 
 ## What works
 
-- Completion, diagnostics, hover, formatting, rename and inlay hints.
+- Completion, diagnostics, hover and formatting.
+- Rename of table aliases.
+- Inlay hints, when you switch them on: set `"inlay_hints": {"enabled": true}` in your Zed
+  settings.
 - DynoTable SQL files: `.dtsql` and `.dynotable.sql`.
 - PartiQL files: `.partiql`.
 
@@ -19,6 +22,8 @@ The extension does not attach to plain `.sql` files.
 
 ## Requirements
 
+- macOS on Apple silicon, Linux x64 or Windows x64. `dynotable-lsp` has no binary for other
+  platforms yet.
 - DynoTable 1.20.0 or later, with the Editor integration switched on.
 - `dynotable-lsp` on your `PATH`, or nothing: when `dynotable-lsp` is not on your `PATH`, the
   extension installs the latest `dynotable-cli` from npm.
